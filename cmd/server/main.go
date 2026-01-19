@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/LigeronAhill/luxcarpets-go/internal/database"
+	"github.com/LigeronAhill/luxcarpets-go/internal/database/types"
 	"github.com/LigeronAhill/luxcarpets-go/pkg/config"
 	"github.com/LigeronAhill/luxcarpets-go/pkg/logger"
 )
@@ -26,11 +27,11 @@ func main() {
 	customLogger := logger.Init(level)
 	slog.Info("Starting server", slog.String("level", level.String()))
 	customLogger.Debug("DEBUG")
-	err = database.Migrate(ctx, cfg.GetString("database.url"))
-	if err != nil {
-		slog.Error("Failed to migrate database", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
 	pool := database.NewPool(ctx, cfg.GetString("database.url"))
 	defer pool.Close()
+	usersSorage := database.NewUsersStorage(pool)
+	usersSorage.List(ctx, types.ListUsersParams{
+		Limit:  1,
+		Offset: 0,
+	})
 }

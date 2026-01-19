@@ -23,6 +23,7 @@ install:
     go get -tool github.com/a-h/templ/cmd/templ@latest
     go get -tool github.com/jackc/tern/v2@latest
     go get -tool github.com/air-verse/air@latest
+    go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 # Запуск всех тестов
 [group("testing")]
@@ -95,16 +96,15 @@ dev:
 new-table TABLE:
     go tool tern new {{ TABLE }}
 
-# Миграции базы данных (пример для golang-migrate)
+# Миграции базы данных
 [group("database")]
 migrate-up:
     go tool tern migrate
 
+# Откат миграции базы данных
 [group("database")]
 migrate-down DOWN:
     go tool tern migrate --destination -{{ DOWN }}
-
-#
 
 # Запуск всех проверок перед коммитом
 [group("ci")]

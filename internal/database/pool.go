@@ -11,8 +11,10 @@ func NewPool(ctx context.Context, dbURL string) *pgxpool.Pool {
 	if err != nil {
 		panic(err)
 	}
-	err = pool.Ping(ctx)
-	if err != nil {
+	if err = pool.Ping(ctx); err != nil {
+		panic(err)
+	}
+	if err = migrateDB(ctx, dbURL); err != nil {
 		panic(err)
 	}
 	return pool

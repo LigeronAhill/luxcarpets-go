@@ -16,7 +16,7 @@ var migrationFS embed.FS
 
 const versionTable = "schema_version"
 
-func Migrate(ctx context.Context, dbURL string) error {
+func migrateDB(ctx context.Context, dbURL string) error {
 	conn, err := pgx.Connect(ctx, dbURL)
 	if err != nil {
 		return fmt.Errorf("ошибка подключения к базе данных: %w", err)

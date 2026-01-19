@@ -105,6 +105,11 @@ func TestNew_EmptyFilePath(t *testing.T) {
 
 // TestNewWithValidation_Success тестирует успешную валидацию
 func TestNewWithValidation_Success(t *testing.T) {
+	dbURL := os.Getenv("LUXCARPETS_DATABASE_URL")
+	os.Unsetenv("LUXCARPETS_DATABASE_URL")
+	defer func() {
+		os.Setenv("LUXCARPETS_DATABASE_URL", dbURL)
+	}()
 	t.Parallel()
 
 	tempDir := t.TempDir()
