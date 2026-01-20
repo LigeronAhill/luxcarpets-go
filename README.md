@@ -4,13 +4,12 @@
 
 ## TODO:
 
-- [ ] База данных
-	- [ ] pgxpool
-	- [ ] migrations
-	- [ ] sqlc
-	- [ ] types
-	- [ ] queries
-	- [ ] tests
+- [x] База данных
+	- [x] pgxpool
+	- [x] migrations
+	- [x] types
+	- [x] queries
+	- [x] tests
 - [ ] Сервер
 	- [ ] fiber
 		- [ ] csrf
