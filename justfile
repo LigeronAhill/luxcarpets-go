@@ -15,7 +15,7 @@ help:
 # Запуск сервера
 [group("server")]
 run:
-    go run ./cmd/server/main.go
+    go run ./cmd/server
 
 # Установка зависимостей
 [group("server")]
@@ -23,7 +23,6 @@ install:
     go get -tool github.com/a-h/templ/cmd/templ@latest
     go get -tool github.com/jackc/tern/v2@latest
     go get -tool github.com/air-verse/air@latest
-    go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 # Запуск всех тестов
 [group("testing")]
@@ -79,12 +78,12 @@ fmt:
 # Сборка проекта
 [group("build")]
 build:
-    go build -o ./bin/server ./cmd/server/main.go
+    go build -o ./bin/server ./cmd/server
 
 # Сборка с оптимизациями
 [group("build")]
 build-release:
-    go build -ldflags="-s -w" -o ./bin/server ./cmd/server/main.go
+    go build -ldflags="-s -w" -o ./bin/server ./cmd/server
 
 # Запуск в режиме разработки с автоперезагрузкой (если установлен air)
 [group("development")]
