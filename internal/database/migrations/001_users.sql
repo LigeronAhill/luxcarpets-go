@@ -1,4 +1,3 @@
--- +goose Up
 -- +tern:Up
 -- Создаем тип ENUM для ролей
 DO $$

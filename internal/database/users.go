@@ -7,23 +7,35 @@ import (
 	"strings"
 
 	"github.com/LigeronAhill/luxcarpets-go/internal/database/types"
-	r "github.com/LigeronAhill/luxcarpets-go/pkg/result"
+	"github.com/LigeronAhill/luxcarpets-go/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type UsersStorage struct {
-	pool *pgxpool.Pool
+// PgxPoolIface определяет интерфейс для работы с PostgreSQL пулом
+// Это позволит использовать как реальный pgxpool.Pool, так и мок
+type PgxPoolIface interface {
+	Close()
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Ping(ctx context.Context) error
 }
 
-func NewUsersStorage(pool *pgxpool.Pool) *UsersStorage {
+type UsersStorage struct {
+	pool PgxPoolIface
+}
+
+func NewUsersStorage(pool PgxPoolIface) *UsersStorage {
 	return &UsersStorage{
 		pool: pool,
 	}
 }
 
-func (u *UsersStorage) Create(ctx context.Context, params types.CreateUserParams) r.Result[*types.User] {
+func (u *UsersStorage) Create(ctx context.Context, params types.CreateUserParams) (*types.User, error) {
+	op := fmt.Sprintf("create new user\nparams:%#v", params)
 	query := `
 		INSERT INTO users (
 		    email,
@@ -44,41 +56,66 @@ func (u *UsersStorage) Create(ctx context.Context, params types.CreateUserParams
 		"image_url":          params.ImageURL,
 		"verification_token": params.VerificationToken,
 	}
-	return r.AndThen(r.Try(u.pool.Query(ctx, query, args)), func(rows pgx.Rows) r.Result[*types.User] {
-		defer rows.Close()
-		return r.Try(pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User])).MapErr(func(err error) error {
-			if IsUniqueConstraintViolation(err, "users_email_key") {
-				return errors.New("email already exists")
-			}
-			return err
-		})
-	})
+	rows, err := u.pool.Query(ctx, query, args)
+	if err != nil {
+		if IsUniqueConstraintViolation(err, "users_email_key") {
+			return nil, errors.New("email already exists")
+		}
+		return nil, utils.Wrap(op, err)
+	}
+	defer rows.Close()
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User])
+	if err != nil {
+		if IsUniqueConstraintViolation(err, "users_email_key") {
+			return nil, errors.New("email already exists")
+		}
+		return nil, utils.Wrap(op, err)
+	}
+	return res, nil
 }
-func (u *UsersStorage) GetByID(ctx context.Context, id uuid.UUID) r.Result[*types.User] {
+
+func (u *UsersStorage) GetByID(ctx context.Context, id uuid.UUID) (*types.User, error) {
+	op := "get user by id " + id.String()
 	query := `
 		SELECT * FROM users WHERE id = @id AND deleted_at IS NULL
 	`
 	args := pgx.NamedArgs{
 		"id": id,
 	}
-	return r.AndThen(r.Try(u.pool.Query(ctx, query, args)), func(rows pgx.Rows) r.Result[*types.User] {
-		defer rows.Close()
-		return r.Try(pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User]))
-	})
+	rows, err := u.pool.Query(ctx, query, args)
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	defer rows.Close()
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User])
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	return res, nil
 }
-func (u *UsersStorage) GetByEmail(ctx context.Context, email string) r.Result[*types.User] {
+
+func (u *UsersStorage) GetByEmail(ctx context.Context, email string) (*types.User, error) {
+	op := "get user by email " + email
 	query := `
 		SELECT * FROM users WHERE email = @email AND deleted_at IS NULL
 	`
 	args := pgx.NamedArgs{
 		"email": strings.ToLower(email),
 	}
-	return r.AndThen(r.Try(u.pool.Query(ctx, query, args)), func(rows pgx.Rows) r.Result[*types.User] {
-		defer rows.Close()
-		return r.Try(pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User]))
-	})
+	rows, err := u.pool.Query(ctx, query, args)
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	defer rows.Close()
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User])
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	return res, nil
 }
-func (u *UsersStorage) Update(ctx context.Context, params types.UpdateUserParams) r.Result[*types.User] {
+
+func (u *UsersStorage) Update(ctx context.Context, params types.UpdateUserParams) (*types.User, error) {
+	op := fmt.Sprintf("update user\nparams:%#v", params)
 	query := `
 		UPDATE users
 		SET
@@ -100,30 +137,40 @@ func (u *UsersStorage) Update(ctx context.Context, params types.UpdateUserParams
 		"image_url":          params.ImageURL,
 		"verification_token": params.VerificationToken,
 	}
-	return r.AndThen(r.Try(u.pool.Query(ctx, query, args)), func(rows pgx.Rows) r.Result[*types.User] {
-		defer rows.Close()
-		return r.Try(pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User]))
-	})
+	rows, err := u.pool.Query(ctx, query, args)
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	defer rows.Close()
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.User])
+	if err != nil {
+		return nil, utils.Wrap(op, err)
+	}
+	return res, nil
 }
-func (u *UsersStorage) List(ctx context.Context, params types.ListUsersParams) r.Result[PaginatedResponse[*types.User]] {
+
+func (u *UsersStorage) List(ctx context.Context, params types.ListUsersParams) (*PaginatedResponse[*types.User], error) {
+	op := fmt.Sprintf("list users\nparams:%#v", params)
 	countQuery, countArgs := params.BuildCountQuery()
 	var total int
 	if err := u.pool.QueryRow(ctx, countQuery, countArgs).Scan(&total); err != nil {
-		return r.Err[PaginatedResponse[*types.User]](err)
+		return nil, utils.Wrap(op, err)
 	}
 	query, args := params.BuildQuery()
 	rows, err := u.pool.Query(ctx, query, args)
 	if err != nil {
-		return r.Err[PaginatedResponse[*types.User]](err)
+		return nil, utils.Wrap(op, err)
 	}
 	defer rows.Close()
 	res, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[types.User])
 	if err != nil {
-		return r.Err[PaginatedResponse[*types.User]](err)
+		return nil, utils.Wrap(op, err)
 	}
-	return r.Ok(NewPaginatedResponse(res, total, params.Limit, params.Offset))
+	return NewPaginatedResponse(res, total, params.Limit, params.Offset), nil
 }
+
 func (u *UsersStorage) Delete(ctx context.Context, id uuid.UUID) error {
+	op := "delete user by id " + id.String()
 	query := `
 		UPDATE users SET deleted_at = NOW() WHERE id = @id AND deleted_at IS NULL;
 	`
@@ -132,7 +179,7 @@ func (u *UsersStorage) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	res, err := u.pool.Exec(ctx, query, args)
 	if err != nil {
-		return err
+		return utils.Wrap(op, err)
 	}
 	if res.RowsAffected() == 0 {
 		return fmt.Errorf("user not found")

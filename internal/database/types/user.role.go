@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/LigeronAhill/luxcarpets-go/pkg/result"
 )
 
 // UserRole представляет роль пользователя в системе
@@ -37,7 +35,7 @@ func (r UserRole) String() string {
 // MarshalJSON для сериализации в JSON
 func (r UserRole) MarshalJSON() ([]byte, error) {
 	if !r.Valid() {
-		return nil, fmt.Errorf("не допустимая роль пользователя: %s", r)
+		return nil, fmt.Errorf("incorrect user role: %s", r)
 	}
 	return json.Marshal(string(r))
 }
@@ -51,7 +49,7 @@ func (r *UserRole) UnmarshalJSON(data []byte) error {
 
 	role := UserRole(strings.ToLower(s))
 	if !role.Valid() {
-		return fmt.Errorf("не допустимая роль пользователя: %s", s)
+		return fmt.Errorf("incorrect user role: %s", s)
 	}
 	*r = role
 	return nil
@@ -92,10 +90,10 @@ func AllRoles() []UserRole {
 }
 
 // RoleFromString создает UserRole из строки
-func RoleFromString(s string) result.Result[UserRole] {
+func RoleFromString(s string) (UserRole, error) {
 	role := UserRole(strings.ToLower(s))
 	if !role.Valid() {
-		return result.Result[UserRole]{Error: fmt.Errorf("не допустимая роль пользователя: %s", s)}
+		return RoleGuest, fmt.Errorf("incorrect user role: %s", s)
 	}
-	return result.Result[UserRole]{Value: role}
+	return role, nil
 }

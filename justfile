@@ -20,7 +20,6 @@ run:
 # Установка зависимостей
 [group("server")]
 install:
-    go get -tool github.com/a-h/templ/cmd/templ@latest
     go get -tool github.com/jackc/tern/v2@latest
     go get -tool github.com/air-verse/air@latest
 
@@ -33,7 +32,7 @@ test:
 [group("testing")]
 test-coverage:
     go test ./... -coverprofile=coverage.out
-    go tool cover -html=coverage -o coverage.html
+    go tool cover -html=coverage.out -o coverage.html
 
 # Запуск тестов с детектором гонок
 [group("testing")]
@@ -59,11 +58,6 @@ test-pkg PACKAGE=".":
 [group("testing")]
 test-fail:
     go test ./... | grep -E "(FAIL|PASS:|ok\s|^ok\s|^---)"
-
-# Генерация шаблонов
-[group("templ")]
-gen-templ:
-    go tool templ generate
 
 # Генерация отчетов статического анализа
 [group("quality")]

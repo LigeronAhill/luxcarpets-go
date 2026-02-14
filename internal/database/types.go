@@ -11,8 +11,8 @@ type PaginatedResponse[T any] struct {
 }
 
 // NewPaginatedResponse создает новый PaginatedResponse
-func NewPaginatedResponse[T any](data []T, total, limit, offset int) PaginatedResponse[T] {
-	return PaginatedResponse[T]{
+func NewPaginatedResponse[T any](data []T, total, limit, offset int) *PaginatedResponse[T] {
+	return &PaginatedResponse[T]{
 		Data:            data,
 		Total:           total,
 		Limit:           limit,

@@ -11,21 +11,20 @@ import (
 )
 
 func run(ctx context.Context) error {
-	cfg, err := config.New(".settings.yml", nil).Unwrap()
+	cfg, err := config.Init("")
 	if err != nil {
 		slog.Error("Failed to load config", slog.String("error", err.Error()))
 		return err
 	}
 	level := logger.INFO
-	environment := cfg.GetString("environment")
-	slog.Warn("from .settings.yml", slog.String("environment", environment))
+	environment := cfg.Environment
 	if environment != "production" {
 		level = logger.DEBUG
 	}
 	customLogger := logger.Init(level)
 	slog.Info("Starting server", slog.String("level", level.String()))
 	customLogger.Debug("DEBUG")
-	pool := database.NewPool(ctx, cfg.GetString("database.url"))
+	pool := database.NewPool(ctx, cfg.DatabaseSettings.URL)
 	defer pool.Close()
 	usersSorage := database.NewUsersStorage(pool)
 	usersSorage.List(ctx, types.ListUsersParams{

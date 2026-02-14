@@ -1,8 +1,0 @@
-server:
-    port: 9090
-    host: "localhost"
-database:
-    url: "postgres://localhost:5432/testdb"
-logging:
-    level: "debug"
-    file: "/var/log/app.log"
