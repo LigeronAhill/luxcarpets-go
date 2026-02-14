@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/LigeronAhill/luxcarpets-go/internal/database"
-	"github.com/LigeronAhill/luxcarpets-go/internal/database/types"
+	"github.com/LigeronAhill/luxcarpets-go/internal/service"
 	"github.com/LigeronAhill/luxcarpets-go/pkg/config"
 	"github.com/LigeronAhill/luxcarpets-go/pkg/logger"
 )
@@ -27,9 +27,6 @@ func run(ctx context.Context) error {
 	pool := database.NewPool(ctx, cfg.DatabaseSettings.URL)
 	defer pool.Close()
 	usersSorage := database.NewUsersStorage(pool)
-	usersSorage.List(ctx, types.ListUsersParams{
-		Limit:  1,
-		Offset: 0,
-	})
+	service.NewUsersService(usersSorage)
 	return nil
 }
